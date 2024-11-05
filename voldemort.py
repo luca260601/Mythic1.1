@@ -1,16 +1,20 @@
+```python
 #!/usr/bin/env python3
 
 import os
+import sys
 import base64
 import zlib
+import logging
 from pathlib import Path
+from typing import List, Callable
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.fernet import Fernet
 
-# Code-Verschleierung hinzufügen
+# Code-Verschleierung
 class CodeProtector:
     def __init__(self):
         self.key = Fernet.generate_key()
@@ -27,16 +31,22 @@ class CodeProtector:
         
         # Neuen Code generieren
         protected_code = f"""
+import os
+import sys
+import base64
+import zlib
+import logging
+from pathlib import Path
+from cryptography.fernet import Fernet
 
 key = {self.key}
 cipher = Fernet(key)
-exec(zlib.decompress(base64.b85decode(cipher.decrypt({encrypted}))))
+exec(zlib.decompress(base85.b85decode(cipher.decrypt({encrypted}))))
 """
         
         # Verschleierten Code speichern
         with open(__file__, 'w') as f:
             f.write(protected_code)
-
 
 class SecureEncryption:
     """Verbesserte Verschlüsselungsklasse für Bildungszwecke"""
@@ -146,9 +156,7 @@ class SecureEncryption:
             self.logger.error(f"Fehler bei Verschlüsselungsprüfung: {str(e)}")
             raise
 
-    def encrypt_files(self, 
-                     files: List[Path], 
-                     encrypt_func: Callable[[bytes], bytes]) -> None:
+    def encrypt_files(self, files: List[Path], encrypt_func: Callable[[bytes], bytes]) -> None:
         """Verschlüsselt die Dateien"""
         try:
             for file in files:
@@ -230,6 +238,10 @@ class SecureEncryption:
             print(f"Fehler: {str(e)}")
             sys.exit(1)
 
+def main():
+    encryptor = SecureEncryption()
+    encryptor.run()
+
 if __name__ == "__main__":
     # Prüfen ob Code bereits verschleiert ist
     with open(__file__, 'r') as f:
@@ -242,3 +254,4 @@ if __name__ == "__main__":
     else:
         # Code ist bereits verschleiert, normal ausführen
         main()
+```
