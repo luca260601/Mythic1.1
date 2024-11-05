@@ -102,7 +102,7 @@ def checkIf():
     
 
 # Auswahl ob es mit AES oder RSA verschüsslet werden soll
-def auswahl():
+def encrypt_files():
     print("Wählen den Verschlüsselungsalgorithmus:")
     print("1. AES")
     print("2. RSA")
